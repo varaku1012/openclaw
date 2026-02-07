@@ -1,0 +1,404 @@
+{
+  "project": {
+    "name": "OpenClaw",
+    "description": "Multi-channel personal AI assistant gateway",
+    "version": "2026.2.1",
+    "repository": "https://github.com/zoned/openclaw",
+    "license": "MIT"
+  },
+  "statistics": {
+    "source_files": 1623,
+    "total_files_with_tests": 2522,
+    "source_size_mb": 18,
+    "extensions": 30,
+    "channels_built_in": 7,
+    "test_coverage_target": 70
+  },
+  "architecture": {
+    "pattern": "Gateway-centric with plugin architecture",
+    "topology": "Monolithic TypeScript core + modular extensions + native companion apps",
+    "runtime": "Node.js 22+, TypeScript 5.9.3 (ESM)",
+    "control_plane": "WebSocket gateway (port 18789)",
+    "build_system": "tsc + vitest + pnpm workspaces",
+    "package_manager": "pnpm@10.23.0"
+  },
+  "modules": {
+    "core_infrastructure": {
+      "cli": {
+        "description": "CLI interface and command infrastructure",
+        "exports": ["buildProgram", "createDefaultDeps", "promptYesNo"],
+        "key_files": ["program.ts", "deps.ts", "profile.ts"]
+      },
+      "commands": {
+        "description": "CLI command implementations",
+        "commands": ["agent", "gateway", "send", "doctor", "wizard", "auth", "skills"],
+        "size": "~400 files"
+      },
+      "config": {
+        "description": "Configuration loading and persistence",
+        "key_files": ["config.ts", "sessions.ts", "session-key-utils.ts"],
+        "config_path": "~/.openclaw/openclaw.json",
+        "credentials_path": "~/.openclaw/credentials/"
+      },
+      "infra": {
+        "description": "System infrastructure",
+        "provides": ["env normalization", "binary management", "port handling", "error handling"],
+        "key_files": ["env.ts", "binaries.ts", "ports.ts", "runtime-guard.ts"]
+      },
+      "logging": {
+        "description": "Structured logging with tslog",
+        "features": ["console capture", "level overrides", "metadata enrichment"]
+      },
+      "terminal": {
+        "description": "Terminal UI utilities",
+        "provides": ["color palette", "progress indicators"],
+        "uses": ["chalk", "osc-progress", "@clack/prompts"]
+      }
+    },
+    "gateway_channels": {
+      "gateway": {
+        "description": "Central WebSocket control plane",
+        "role": "Orchestrates all channel I/O and agent communication",
+        "port": 18789,
+        "protocol": "WebSocket + custom RPC",
+        "files": 50,
+        "key_files": [
+          "server.ts",
+          "client.ts",
+          "boot.ts",
+          "auth.ts",
+          "call.ts",
+          "chat-attachments.ts"
+        ]
+      },
+      "channels_abstraction": {
+        "description": "Shared channel APIs and adapters",
+        "files": 25,
+        "provides": [
+          "ChannelPlugin interface",
+          "Dock (metadata)",
+          "Registry",
+          "Command gating",
+          "Group mention policies"
+        ]
+      },
+      "built_in_channels": {
+        "discord": "Discord servers and DMs",
+        "slack": "Slack workspaces",
+        "telegram": "Telegram chats",
+        "signal": "Signal messenger",
+        "imessage": "macOS iMessage",
+        "whatsapp": "WhatsApp (web-based via Baileys)",
+        "line": "LINE messaging"
+      }
+    },
+    "agent_runtime": {
+      "description": "AI agent execution and tool management",
+      "files": 400,
+      "core_components": {
+        "pi_embedded_runner": {
+          "file": "pi-embedded-runner.ts",
+          "role": "Executes Pi agent with context, history, auth profile rotation",
+          "handles": ["context window management", "history sanitization", "model fallback"]
+        },
+        "pi_embedded_subscribe": {
+          "file": "pi-embedded-subscribe.ts",
+          "role": "Handles streaming responses from Pi agent",
+          "features": ["soft chunking", "thought stripping", "markdown formatting"]
+        },
+        "bash_tools": {
+          "files": "bash-tools.*.ts",
+          "role": "Shell execution with PTY support",
+          "features": ["approval framework", "path validation", "process registry"]
+        },
+        "agent_tools": {
+          "file": "pi-tools.ts",
+          "role": "Tool composition (read, write, bash, canvas, etc.)",
+          "tools": ["read", "write", "bash", "canvas", "camera", "sessions", "agents"]
+        },
+        "system_prompt": {
+          "file": "system-prompt.ts",
+          "size": "~800 LOC",
+          "role": "Dynamic system prompt builder with skills, context, tool list"
+        }
+      },
+      "model_management": {
+        "model_auth": "Provider credential resolution with profile rotation",
+        "model_selection": "Choose preferred model with fallback strategy",
+        "model_fallback": "Retry on unavailable models",
+        "model_catalog": "Available model enumeration",
+        "models_config": "Model and provider configuration",
+        "providers": ["Anthropic", "OpenAI", "Google", "Bedrock", "Ollama", "GitHub Copilot"]
+      },
+      "session_memory": {
+        "memory_search": "Vector embedding search",
+        "session_write_lock": "Concurrency control",
+        "session_transcript_repair": "Fix corrupted history",
+        "session_tool_result_guard": "Tool result validation"
+      },
+      "skills": {
+        "skills_install": "Skill package installer",
+        "skills_status": "Skill status reporter",
+        "skills": "Skill loading and bundling",
+        "path": "~/.openclaw/workspace/ + bundled/"
+      },
+      "sandbox": {
+        "role": "Code execution environment",
+        "providers": ["Docker", "containerd"],
+        "configurable": true,
+        "per_agent_overrides": true
+      },
+      "subagents": {
+        "role": "Agent-to-agent spawning",
+        "features": ["cross-agent delegation", "dynamic routing"]
+      }
+    },
+    "providers": {
+      "description": "Model and LLM provider integrations",
+      "files": 20,
+      "integrations": [
+        "GitHub Copilot auth and token exchange",
+        "Google API quirks handling",
+        "Qwen portal OAuth",
+        "Provider-specific configurations"
+      ]
+    },
+    "media": {
+      "description": "Image/video processing",
+      "files": 20,
+      "provides": ["fetch", "host", "image-ops", "input-files", "mime", "parse", "store", "server"]
+    },
+    "media_understanding": {
+      "description": "Transcription and vision",
+      "provides": ["Vision provider abstraction", "Transcription provider abstraction"]
+    },
+    "tts": {
+      "description": "Text-to-speech integration",
+      "providers": ["Microsoft Edge TTS"]
+    },
+    "process": {
+      "description": "Process and execution management",
+      "modules": ["exec.ts (shell execution)", "child-process-bridge.ts", "tau-rpc.ts"]
+    },
+    "browser": {
+      "description": "Playwright web automation",
+      "provides": ["headless browser control", "screenshot capture", "DOM navigation"]
+    },
+    "utilities": {
+      "utils": {
+        "size": "800+ LOC",
+        "provides": ["E.164 normalization", "WhatsApp JID formatting", "Message parsing"]
+      },
+      "shared": "Shared TypeScript types and helpers",
+      "types": "Type definitions and Zod schemas"
+    },
+    "advanced_features": {
+      "browser": "Web automation (Playwright)",
+      "link_understanding": "Web page parsing and readability",
+      "markdown": "Markdown processing",
+      "acp": "Agent Control Protocol",
+      "auto_reply": "Auto-reply message templates",
+      "cron": "Scheduled task execution",
+      "daemon": "Background service mode",
+      "hooks": "Git hooks and event listeners",
+      "macos": "macOS-specific integration",
+      "pairing": "Device pairing (QR codes)",
+      "plugins": "Plugin runtime and management",
+      "routing": "Message routing and account mapping",
+      "security": "Credential handling and encryption",
+      "web": "Web server and chat interface",
+      "wizard": "Interactive configuration",
+      "tui": "Terminal user interface",
+      "control_ui": "Control panel web UI",
+      "canvas_host": "Canvas rendering (SVG/drawings)",
+      "node_host": "Sandboxed Node.js REPL",
+      "compat": "Legacy API compatibility",
+      "docs": "Documentation generation",
+      "test_helpers": "Testing infrastructure"
+    }
+  },
+  "extensions": {
+    "total": 30,
+    "categories": {
+      "channels": [
+        "bluebubbles",
+        "discord",
+        "googlechat",
+        "imessage",
+        "line",
+        "matrix",
+        "mattermost",
+        "msteams",
+        "nextcloud-talk",
+        "nostr",
+        "signal",
+        "slack",
+        "telegram",
+        "tlon",
+        "twitch",
+        "voice-call",
+        "whatsapp",
+        "zalo",
+        "zalouser"
+      ],
+      "memory": ["memory-core", "memory-lancedb"],
+      "authentication": [
+        "google-gemini-cli-auth",
+        "google-antigravity-auth",
+        "minimax-portal-auth",
+        "qwen-portal-auth"
+      ],
+      "integrations": [
+        "copilot-proxy",
+        "llm-task",
+        "diagnostics-otel",
+        "lobster",
+        "open-prose"
+      ]
+    },
+    "structure": {
+      "each_extension": {
+        "package.json": "Declares extension dependencies",
+        "openclaw.plugin.json": "Plugin manifest (entry point)",
+        "index.ts": "Extension entry point",
+        "src/": "Implementation"
+      }
+    }
+  },
+  "companion_apps": {
+    "macos": {
+      "technology": "SwiftUI native app",
+      "role": "Menu bar app with gateway control",
+      "modules": ["OpenClaw", "OpenClawDiscovery", "OpenClawIPC", "OpenClawMacCLI", "OpenClawProtocol"],
+      "features": ["Voice wake", "Canvas rendering", "Gateway control", "iMessage forwarding"]
+    },
+    "ios": {
+      "technology": "SwiftUI native app",
+      "modules": ["OpenClaw", "OpenClawCamera", "OpenClawVoiceWake"],
+      "features": ["Camera input", "Voice activation", "Canvas", "TLS/WebSocket connection"]
+    },
+    "android": {
+      "technology": "Kotlin + Jetpack Compose",
+      "build_system": "Gradle",
+      "features": ["Camera input", "Voice support", "Canvas", "Gateway connection"]
+    },
+    "shared_kit": {
+      "technology": "Swift framework",
+      "role": "Cross-platform shared code",
+      "distribution": "CocoaPods",
+      "provides": ["Wire protocol", "TLS/WebSocket", "Shared utilities"]
+    }
+  },
+  "workspaces": {
+    "root": {
+      "role": "Main openclaw package",
+      "exports": ["./", "./plugin-sdk"]
+    },
+    "packages": {
+      "clawdbot": "Legacy compatibility shim",
+      "moltbot": "Alternative agent runner"
+    },
+    "ui": {
+      "role": "Web UI (separate build system)",
+      "technology": "React/Next.js"
+    }
+  },
+  "critical_paths": {
+    "message_reception": [
+      "Channel receives message",
+      "Channel adapter routes to gateway",
+      "Gateway session lookup",
+      "Route to agent RPC",
+      "Agent executes",
+      "Stream responses back",
+      "Send to channel"
+    ],
+    "agent_execution": [
+      "Load auth profile",
+      "Build system prompt",
+      "Load conversation history",
+      "Resolve model selection",
+      "Execute Pi agent",
+      "Handle tool calls",
+      "Post-process response",
+      "Save to transcript"
+    ],
+    "configuration_loading": [
+      "Load ~/.openclaw/openclaw.json",
+      "Load .env file",
+      "Normalize environment",
+      "Validate credentials",
+      "Load model config",
+      "Load auth profiles"
+    ]
+  },
+  "build_system": {
+    "typescript_compiler": {
+      "target": "es2023",
+      "module": "NodeNext",
+      "strict": true,
+      "lib": ["DOM", "DOM.Iterable", "ES2023"]
+    },
+    "test_runners": {
+      "vitest.config.ts": "Unit tests (70% coverage target)",
+      "vitest.e2e.config.ts": "End-to-end tests",
+      "vitest.live.config.ts": "Live API tests (requires keys)",
+      "vitest.extensions.config.ts": "Extension tests",
+      "vitest.gateway.config.ts": "Gateway-focused tests"
+    },
+    "linting": {
+      "oxlint": "Fast Rust-based linter (type-aware)",
+      "oxfmt": "Fast Rust-based formatter",
+      "max_loc": "500 lines per file (enforced)"
+    },
+    "scripts": {
+      "build": "tsc + canvas bundling + asset copy",
+      "test": "vitest parallel unit tests",
+      "lint": "oxlint with type awareness",
+      "format": "oxfmt check/write"
+    }
+  },
+  "key_decisions": {
+    "gateway_as_control_plane": {
+      "rationale": "Single routing point, session management, reliable delivery, multi-agent support",
+      "trade_offs": "Adds latency hop (mitigated by low-latency WebSocket)"
+    },
+    "plugin_architecture": {
+      "rationale": "Support 20+ platforms, community contributions, isolated dependencies, lazy loading",
+      "trade_offs": "Slightly more complex than hardcoded channels"
+    },
+    "separate_agent_process": {
+      "rationale": "Isolate crashes, resource limits, future sandboxing",
+      "trade_offs": "IPC overhead (acceptable for benefits)"
+    },
+    "multiple_providers_with_fallback": {
+      "rationale": "Resilience, cost optimization, model-specific strengths",
+      "trade_offs": "Complexity in model selection logic"
+    },
+    "monolithic_monorepo": {
+      "rationale": "Single deploy, shared code, easier debugging, simple dependencies",
+      "trade_offs": "Can't scale parts independently (future: extract if needed)"
+    },
+    "swift_for_native_apps": {
+      "rationale": "Native performance, direct OS access, proper look and feel",
+      "trade_offs": "Language barrier (team knows TypeScript better)"
+    }
+  },
+  "glossary": {
+    "Agent": "AI entity (Pi agent) that processes messages and executes tools",
+    "Channel": "Messaging platform adapter (Discord, Slack, Telegram, etc.)",
+    "Extension": "Loadable feature (channel, tool, auth, etc.)",
+    "Gateway": "Central WebSocket control plane routing all messages",
+    "Session": "Conversation state for one user on one channel",
+    "Tool": "Action agent can execute (bash, read file, send message, etc.)",
+    "Model": "LLM backend (Claude, GPT-4, Gemini, etc.)",
+    "Provider": "API provider for models (Anthropic, OpenAI, Google, etc.)",
+    "Sandbox": "Isolated execution environment for agent tools",
+    "Dock": "Channel metadata (capabilities, group rules, mention patterns)",
+    "RPC": "Remote Procedure Call (gateway ↔ agent communication)",
+    "Subagent": "Agent spawned by another agent for delegation",
+    "Skill": "User-defined agent capability",
+    "Canvas": "Real-time drawing/SVG collaboration surface",
+    "Auth Profile": "Credential set for model provider (supports rotation)"
+  }
+}
