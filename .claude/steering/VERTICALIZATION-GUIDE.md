@@ -293,6 +293,66 @@ Rules:
 
 ---
 
+## Standard Build Order for a New Vertical
+
+Follow this sequence — each step builds on the previous:
+
+1. **Define tenant boundaries** — which channels/accounts map to which agent IDs (`agents.list[]`, `bindings[]`)
+2. **Model domain API clients** — under `extensions/<vertical>/src/integrations/`
+3. **Expose read-only tools first** — safe, minimal tool contracts in `extensions/<vertical>/src/tools/`
+4. **Add write tools with preview/confirm split** — never combine preview and commit in one tool
+5. **Add skill instructions** — teach the agent correct usage sequence and confirmation flows
+6. **Wire webhook/cron** — only after manual paths are stable
+7. **Add tests** — at tool, integration-mock, and gateway method layers
+
+## Suggested Milestones per Vertical
+
+| Milestone | Scope |
+|-----------|-------|
+| **Foundation** | Integration clients + read-only tools + skills |
+| **Controlled Writes** | Preview + confirm split actions |
+| **Automation** | Webhook and cron flows |
+| **Expansion** | Multi-agent tenant routing and reporting |
+
+## Multi-Tenant Deployment Pattern
+
+Each tenant/brand requires:
+- Dedicated `agentId` in `agents.list[]`
+- Dedicated `workspace` directory
+- Dedicated `agentDir` for session storage
+- Explicit `bindings[]` mapping channel/account/peer to agent
+- Session collision impossible when agent IDs are unique per tenant
+
+## Prompt/Skill Layering Pattern
+
+Layer prompts from broad to narrow:
+
+1. **Global safety and style** — base system prompt
+2. **Vertical policy** — domain constraints (e.g., "never confirm orders without inventory check")
+3. **Tenant policy** — brand voice, local business rules
+4. **Task skill instructions** — tool-level runbooks in `SKILL.md` files
+
+Keep system prompts compact. Place long runbooks in `SKILL.md` files.
+
+## Operational Readiness Checklist
+
+Before rollout for any vertical:
+
+1. [ ] DM/group access policy is locked down for production channels
+2. [ ] Tool allowlists and denylists are properly configured
+3. [ ] High-risk actions require explicit user confirmation (preview/confirm split)
+4. [ ] Plugin config schema and UI hints are complete
+5. [ ] Cron/webhook flows are idempotent and observable
+6. [ ] Tests cover all commit-path (write) actions
+
+## Anti-Patterns to Avoid
+
+- Putting domain logic directly into core gateway handlers (use plugin tools)
+- Using one monolithic tool for preview + commit side effects
+- Relying only on prompt instructions for irreversible operations (use tool-level gating)
+- Shipping vertical features without explicit routing isolation
+- Hardcoding tenant config (use `pluginConfig` with schema validation)
+
 ## Implementation Checklist for Any Vertical
 
 1. [ ] Create extension package structure

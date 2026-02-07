@@ -60,6 +60,53 @@ Messaging Channels (WhatsApp/Telegram/Slack/Discord/Signal/iMessage/Teams/Line/M
 | Memory | `src/memory/` | Vector memory (sqlite-vec) |
 | Cron | `src/cron/` | Scheduled task execution |
 | Infra | `src/infra/` | Infrastructure utilities, diagnostic events |
+| Plugins | `src/plugins/` | Plugin discovery, loading, registry, runtime API |
+| Skills | `src/agents/skills/` | Skill loading, prompt composition, env overrides |
+
+## Runtime Entry Chain
+
+```
+openclaw.mjs (packaged binary)
+  → src/entry.ts (bootstrap)
+    → src/cli/run-main.ts (CLI runner)
+      → src/cli/program/build-program.ts (program assembly)
+        → src/cli/program/command-registry.ts (command registry)
+        → src/cli/program/register.subclis.ts (lazy subcommand loading)
+```
+
+Plugin CLI commands are injected via `src/plugins/cli.ts`.
+
+## Plugin Discovery & Loading Pipeline
+
+```
+src/plugins/discovery.ts        → Candidate discovery from workspace/global/bundled
+src/plugins/manifest-registry.ts → Manifest resolution (openclaw.plugin.json)
+src/plugins/loader.ts           → Load and register plugins
+src/plugins/registry.ts         → Runtime plugin registry
+src/plugins/runtime/index.ts    → Runtime API available to plugins
+```
+
+## Key Internal Paths
+
+| Purpose | File |
+|---------|------|
+| Outbound message delivery | `src/infra/outbound/deliver.ts` |
+| Route resolution | `src/routing/resolve-route.ts` |
+| Binding helpers | `src/routing/bindings.ts` |
+| WS connection lifecycle | `src/gateway/server/ws-connection.ts` |
+| WS handshake/auth/dispatch | `src/gateway/server/ws-connection/message-handler.ts` |
+| HTTP surface router | `src/gateway/server-http.ts` |
+| Control UI serving | `src/gateway/control-ui.ts` |
+| Webhook hooks | `src/gateway/hooks.ts`, `src/gateway/hooks-mapping.ts` |
+| Built-in tool assembly | `src/agents/openclaw-tools.ts` |
+| CLI backend wrappers | `src/agents/cli-backends.ts`, `src/agents/cli-runner.ts` |
+| Model catalog | `src/agents/model-catalog.ts` |
+| Memory search | `src/memory/manager.ts`, `src/memory/search-manager.ts` |
+| Node command policy | `src/gateway/node-command-policy.ts` |
+
+## Known Documentation Drift
+
+- `AGENTS.md` references `src/provider-web.ts` — this file no longer exists. WhatsApp/web runtime is at `src/web/` and re-exported via `src/channel-web.ts`.
 
 ## Channel Implementations
 
