@@ -1,47 +1,49 @@
-# OpenClaw Architecture
+# OpenClaw System Architecture
 
-## High-Level Overview
+OpenClaw is a modular AI Assistant platform composed of a Gateway (Nervous System), Agents (Brain), and Extensions (Limbs).
 
-OpenClaw is a personal AI assistant platform designed to run locally on user devices. It acts as a central **Gateway** that connects various **Messaging Channels** (WhatsApp, Telegram, Slack, etc.) to **AI Agents**.
+## 1. The Three-Layer Stack
 
-The architecture is composed of three main layers:
-1.  **Gateway (The Nervous System):** Manages connections, message routing, sessions, and the WebSocket control plane.
-2.  **Agents (The Brain):** The runtime environment that executes AI models, manages context, and calls tools.
-3.  **Extensions & Skills (The Limbs):** Plugins that add new channels, capabilities, and domain-specific tools.
+### Gateway (`src/gateway`)
+The central control plane and WebSocket server.
+-   **Routing:** Maps incoming messages from peers to specific Agent sessions.
+-   **Security:** Enforces auth scopes and DM/Group policies.
+-   **State:** Manages the active run loop and streaming delivery.
 
-## Core Components
+### Agents (`src/agents`)
+The execution environment for LLMs.
+-   **Runner:** The Think-Tool-Act cycle.
+-   **Memory:** Context management and compaction.
+-   **Identity:** Personas, avatars, and custom system prompts.
 
-### 1. Gateway (`src/gateway`)
-The Gateway is the server component that runs locally.
--   **Entry Point:** `src/gateway/server.ts` (starts via `startGatewayServer`).
--   **Responsibilities:**
-    -   **Protocol:** Implements the OpenClaw Protocol for client-server communication.
-    -   **Session Management:** Handles user sessions (`src/gateway/server-sessions.ts`).
-    -   **Message Routing:** Routes messages from Channels to Agents and back.
-    -   **Discovery:** Manages discovery of local nodes and capabilities.
+### Extensions & Channels (`extensions/`, `src/channels`)
+The connectivity layer.
+-   **Channels:** Adapters for WhatsApp, Telegram, etc.
+-   **Plugins:** Background services, custom HTTP routes, and additional tools.
 
-### 2. Agents (`src/agents`)
-The Agent Runtime executes the "cognitive loop" of the AI.
--   **Runner:** `src/agents/pi-embedded-runner.ts` is the core loop that manages the "Think -> Tool -> Action" cycle.
--   **Context:** Manages the context window, history, and system prompts.
--   **Tools:** Exposes internal tools and loaded Skills to the LLM.
+## 2. Core Entities (Domain Model)
 
-### 3. Channels (`src/channels`, `extensions/*`)
-Channels are adapters that connect external messaging platforms to the Gateway.
--   **Core Channels:** WhatsApp (Web), Telegram, Slack, etc.
--   **Interface:** Channels implement a set of adapters (Auth, Setup, Messaging) defined in `src/plugin-sdk`.
--   **Extensions:** New channels are best implemented as extensions (e.g., `extensions/googlechat`).
+-   **Agent:** A unique persona ID with specific config (model, tools, workspace).
+-   **Session:** A deterministic conversation ID: `agent:{id}:{scope}`.
+-   **Binding:** A configuration rule mapping a `(channel, account, peer)` tuple to an `agentId`.
+-   **Skill:** A bundle of tools and system-prompt additions.
 
-### 4. Skills (`skills/`)
-Skills are packages of tools and prompts that give Agents specific capabilities.
--   **Structure:** A directory containing a definition (likely `SKILL.md` or similar) and executable code/scripts.
--   **Usage:** Skills are loaded by the Agent Runtime and exposed as tools to the LLM.
+## 3. Message Processing Pipeline
 
-## Data Flow
-1.  **Inbound:** User sends a message on a Channel (e.g., Telegram).
-2.  **Routing:** Channel Adapter receives the message and forwards it to the Gateway.
-3.  **Processing:** Gateway routes the message to the active Agent Session.
-4.  **Cognition:** Agent receives the message, consults its System Prompt and History, and generates a response or Tool Call.
-5.  **Execution:** If a Tool is called, the Agent Runtime executes it (e.g., "Look up menu").
-6.  **Outbound:** Agent sends the final text response back to the Gateway.
-7.  **Delivery:** Gateway forwards the response to the Channel Adapter, which sends it to the user.
+1.  **Inbound:** Channel receives raw message.
+2.  **Normalization:** Message is converted to a standard `Envelope`.
+3.  **Security Gate:** DM/Group policy and allowlist checks.
+4.  **Routing:** `resolve-route.ts` identifies the target `agentId` and `sessionKey`.
+5.  **Agent Invocation:** `agent` RPC method is called.
+6.  **Cognition:** LLM processes context, history, and tools.
+7.  **Outbound:** Response is delivered via the outbound delivery service.
+
+## 4. Key Directory Map
+
+-   `src/gateway/`: Server, protocol, and RPC methods.
+-   `src/agents/`: Model selection, runners, and context logic.
+-   `src/channels/`: Built-in messaging platform adapters.
+-   `src/plugin-sdk/`: Public interfaces for building extensions.
+-   `extensions/`: First-party and community plugins.
+-   `skills/`: Bundled agent capabilities.
+-   `docs/`: Mintlify-based documentation.
