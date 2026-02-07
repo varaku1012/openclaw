@@ -1,6 +1,6 @@
 # Verticalization Blueprint
 
-Last validated: 2026-02-06
+Last validated: 2026-02-07
 
 This blueprint describes how to specialize OpenClaw into domain engines (restaurants, marketing agencies, auto dealerships) without forking core architecture.
 
@@ -27,6 +27,8 @@ Default target is one vertical package per domain plus optional shared utility p
 - `extensions/<vertical>/src/integrations/`
 - `extensions/<vertical>/src/hooks/`
 - `extensions/<vertical>/src/services/`
+- `extensions/<vertical>/src/config/` (optional, plugin-local config helpers/schema composition)
+- `extensions/<vertical>/src/prompts/` (optional, domain context builders)
 - `extensions/<vertical>/skills/` (optional, if shipping domain skills)
 
 ## 3) Standard Build Order for a New Vertical
@@ -36,8 +38,9 @@ Default target is one vertical package per domain plus optional shared utility p
 3. Expose safe, minimal tool contracts in `extensions/<vertical>/src/tools/`.
 4. Add deterministic operator commands in `extensions/<vertical>/src/commands/` for high-risk actions.
 5. Add skill instructions that teach confirmation flows and domain language.
-6. Wire webhook/cron ingestion if the vertical requires async workflows.
-7. Add tests at tool, integration-mock, and gateway method layers.
+6. Add plugin hook context injection only where needed (for example `before_agent_start`).
+7. Wire webhook/cron ingestion if the vertical requires async workflows.
+8. Add tests at tool, integration-mock, and gateway method layers.
 
 ## 4) Domain Templates
 

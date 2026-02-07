@@ -1,6 +1,6 @@
 # Engineering Guardrails
 
-Last validated: 2026-02-06
+Last validated: 2026-02-07
 
 This document defines implementation rules for AI coding agents changing OpenClaw.
 
@@ -55,7 +55,21 @@ This document defines implementation rules for AI coding agents changing OpenCla
   - Register validation exports in `src/gateway/protocol/index.ts`
   - Wire handler in `src/gateway/server-methods/*.ts`
 
-## 5) Testing Rules
+## 5) Tool Schema Compatibility Rules
+
+- Prefer `stringEnum` / `optionalStringEnum` helpers from `src/agents/schema/typebox.ts` (also exported via `src/plugin-sdk/index.ts`) for string enums.
+- Avoid top-level `Type.Union(...)` in tool input schemas; keep root schema as object for provider compatibility (`src/agents/pi-tools.schema.ts`, `src/agents/tools/browser-tool.schema.ts`).
+- Prefer flat object schemas over deeply nested union-heavy schemas for cross-provider portability.
+- For parameter parsing and result formatting, prefer helpers from `src/agents/tools/common.ts` (`readStringParam`, `readNumberParam`, `jsonResult`, `createActionGate`).
+
+## 6) Resilience Rules for Integrations
+
+- For provider auth profile rotation and cooldown behavior, align with `src/agents/auth-profiles/order.ts` and `src/agents/auth-profiles/usage.ts`.
+- For outbound HTTP in media/integration code, use guarded fetch patterns with timeout + SSRF controls (`src/media-understanding/providers/shared.ts`, `src/infra/net/ssrf.ts`).
+- Reuse shared backoff helpers (`src/infra/backoff.ts`) instead of ad-hoc retry loops.
+- Keep file-based state writes safe under concurrent access using existing lock patterns (`src/agents/auth-profiles/store.ts`, `src/pairing/pairing-store.ts`).
+
+## 7) Testing Rules
 
 For non-trivial changes, include tests at the same layer as the change:
 
@@ -73,14 +87,21 @@ Baseline verification commands:
 
 Use targeted test files first, then expand.
 
-## 6) Common Drift Risks
+Test reliability helpers to prefer:
+
+- Isolated home/state: `test/helpers/temp-home.ts` (`withTempHome`)
+- Async polling: `test/helpers/poll.ts` (`pollUntil`) instead of ad-hoc sleeps
+- Deterministic multi-port allocation: `src/test-utils/ports.ts` (`getDeterministicFreePortBlock`)
+- Plugin/channel registry stubs: `src/test-utils/channel-plugins.ts`
+
+## 8) Common Drift Risks
 
 - Doc drift vs source: verify file paths and symbol names before referencing.
 - Alias confusion in model/provider ids: normalize via `normalizeProviderId` in `src/agents/model-selection.ts`.
 - Multi-agent routing bugs: validate bindings and account normalization (`src/routing/resolve-route.ts`).
 - Plugin command/method collisions: check registry guards in `src/plugins/registry.ts`.
 
-## 7) Done Criteria for AI Agents
+## 9) Done Criteria for AI Agents
 
 A change is done only when:
 

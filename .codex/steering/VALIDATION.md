@@ -1,6 +1,6 @@
 # Steering Validation
 
-Validated on: 2026-02-06
+Validated on: 2026-02-07
 
 This report captures the verification pass for `.codex/steering/`.
 
@@ -28,12 +28,22 @@ This report captures the verification pass for `.codex/steering/`.
   - `AI_AGENT_WORKFLOW.md`
   - `VALIDATION.md`
 - Path-reference scan summary:
-  - Checked references: 170
-  - Skipped template placeholders: 27
+  - Checked references: 202
+  - Skipped template placeholders: 29
   - Skipped wildcard patterns: 20
   - Skipped command-like snippets: 2
   - Skipped example-only refs: 5
   - Actionable missing references: 0
+
+## Cross-Team Synthesis
+
+Reviewed and compared `.gemini/steering/` and `.claude/steering/` against source. Adopted only source-verified guidance:
+
+- Added tool schema portability rules (`stringEnum`/`optionalStringEnum`, no top-level union schemas) with canonical references.
+- Added protocol regeneration requirements for gateway method changes (`pnpm protocol:gen`, `pnpm protocol:gen:swift` when needed).
+- Added plugin runtime API coverage (hooks/services/http/gateway/command registration).
+- Added resilient integration patterns grounded in existing modules (auth profile cooldown/order, guarded fetch + SSRF policy, shared backoff helpers, lock-based file writes).
+- Added practical test stability patterns (`withTempHome`, `pollUntil`, deterministic port blocks, test plugin registry stubs).
 
 ## Intentional Exceptions
 

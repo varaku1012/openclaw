@@ -1,6 +1,6 @@
 # Extension Surfaces
 
-Last validated: 2026-02-06
+Last validated: 2026-02-07
 
 Use this map to choose the correct place for new functionality.
 
@@ -31,6 +31,8 @@ Validation:
 
 - Add unit tests under `src/gateway/server-methods/*.test.ts`.
 - Add e2e where behavior crosses WS/session boundaries.
+- Regenerate protocol artifacts with `pnpm protocol:gen`.
+- If companion app protocol models changed, also run `pnpm protocol:gen:swift`.
 
 ## 3) Add a New Channel
 
@@ -134,3 +136,13 @@ When adding tenant/vertical separation behavior, align with:
 - Session key semantics: `src/routing/session-key.ts`
 
 Do not introduce alternate routing stores outside these modules.
+
+## 11) Plugin Runtime Hooks and Services
+
+Use plugin runtime API from `src/plugins/types.ts` / `src/plugin-sdk/index.ts`:
+
+- Lifecycle hooks: `api.on(...)` and event hooks via `api.registerHook(...)`
+- Background services: `api.registerService(...)`
+- HTTP extension points: `api.registerHttpRoute(...)` and `api.registerHttpHandler(...)`
+- Gateway extensions: `api.registerGatewayMethod(...)`
+- Deterministic command path: `api.registerCommand(...)`

@@ -1,6 +1,6 @@
 # System Map
 
-Last validated: 2026-02-06
+Last validated: 2026-02-07
 
 ## 1) Runtime Entry Chain
 
@@ -96,6 +96,7 @@ Runtime API available to plugins:
 
 - `src/plugins/runtime/index.ts`
 - Public SDK exports: `src/plugin-sdk/index.ts`
+- Plugin API contract types: `src/plugins/types.ts`
 
 Plugin metadata contract:
 
@@ -179,11 +180,13 @@ Primary scripts:
 - `pnpm test`
 - `pnpm test:e2e`
 - `pnpm test:coverage`
+- Parallel test orchestrator: `scripts/test-parallel.mjs`
 
 Config files:
 
 - Unit/integration: `vitest.config.ts`
 - E2E: `vitest.e2e.config.ts`
 - Live: `vitest.live.config.ts`
+- Split suites: `vitest.unit.config.ts`, `vitest.gateway.config.ts`, `vitest.extensions.config.ts`
 
 Coverage thresholds in unit config: lines/functions/statements 70%, branches 55%.

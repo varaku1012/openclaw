@@ -1,6 +1,6 @@
 # AI Agent Workflow
 
-Last validated: 2026-02-06
+Last validated: 2026-02-07
 
 Use this workflow for reliable changes in this repo.
 
@@ -42,6 +42,10 @@ Standard for most PRs:
 
 - `pnpm check`
 - `pnpm test`
+- Optionally use split test configs for faster feedback:
+  - `vitest.unit.config.ts`
+  - `vitest.gateway.config.ts`
+  - `vitest.extensions.config.ts`
 
 If UI changed:
 
@@ -51,8 +55,25 @@ If UI changed:
 If gateway protocol/method changed:
 
 - Add/update gateway tests and at least one integration/e2e assertion.
+- Run `pnpm protocol:gen`.
+- Run `pnpm protocol:gen:swift` when companion protocol models are affected.
 
-## 5) Vertical Feature Workflow
+For filesystem/network-sensitive tests:
+
+- Use `withTempHome` from `test/helpers/temp-home.ts`.
+- Prefer `pollUntil` from `test/helpers/poll.ts` over arbitrary sleeps.
+- Use `getDeterministicFreePortBlock` from `src/test-utils/ports.ts` for multi-service tests.
+
+## 5) Tool Authoring Workflow
+
+When adding or modifying tools:
+
+1. Keep input schema root as an object; avoid top-level unions.
+2. Prefer `stringEnum` / `optionalStringEnum` schema helpers.
+3. Use parsing/result helpers from `src/agents/tools/common.ts`.
+4. For side-effecting operations, split into preview and commit actions.
+
+## 6) Vertical Feature Workflow
 
 For restaurants/marketing/dealership features:
 
@@ -62,7 +83,7 @@ For restaurants/marketing/dealership features:
 4. Bind specific tenant channels/accounts via `bindings[]`.
 5. Add automation only after manual path is stable.
 
-## 6) Safety Workflow for Side Effects
+## 7) Safety Workflow for Side Effects
 
 Any external side effect (order, campaign publish, finance quote commit, etc.) should use:
 
@@ -73,11 +94,10 @@ Any external side effect (order, campaign publish, finance quote commit, etc.) s
 
 Do not compress these into one opaque tool call.
 
-## 7) PR Completion Checklist
+## 8) PR Completion Checklist
 
 - Behavior implemented and documented in code comments only where needed.
 - Tests added/updated and executed.
 - No unrelated files changed.
 - No generated outputs manually edited.
 - File references in docs are valid.
-

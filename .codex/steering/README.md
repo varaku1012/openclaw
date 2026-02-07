@@ -1,9 +1,12 @@
 # OpenClaw Steering Context for Coding Agents
 
-Last validated: 2026-02-06
+Last validated: 2026-02-07
 
 This folder is a verified steering pack for AI coding agents working in this repo.
 Use it to avoid architectural drift, pick the right extension seams, and ship vertical features safely.
+
+This set is curated from direct source inspection and cross-review of other steering packs.
+Only source-verified guidance is included.
 
 ## Read Order
 
@@ -30,4 +33,3 @@ This steering context is grounded in current source and docs, especially:
 
 - `AGENTS.md` references `src/provider-web.ts`, but this file does not exist in current repo.
   WhatsApp/web channel runtime is under `src/web/` and re-exported via `src/channel-web.ts`.
-
